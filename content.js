@@ -1,3 +1,5 @@
+const api = typeof browser !== 'undefined' && browser.runtime ? browser : chrome;
+
 const PAGE_STYLE_ID = 'gfa-ai-injected-style';
 
 function ensureStyle() {
@@ -195,6 +197,25 @@ function addFab() {
   document.body.appendChild(btn);
 }
 
+const PROVIDER_LABELS = {
+  'ollama-cloud': 'Ollama Cloud',
+  claude: 'Claude',
+  'ollama-local': 'Ollama local'
+};
+
+async function loadConfig() {
+  const cfg = await api.storage.local.get({ provider: '', baseUrl: '', customUrl: '', model: '', apiKey: '' });
+  const legacyUrl = (cfg.customUrl || cfg.baseUrl || '').trim();
+  let provider = cfg.provider;
+  if (!provider) provider = legacyUrl.indexOf('ollama.com') !== -1 ? 'ollama-cloud' : 'ollama-local';
+  return {
+    provider,
+    customUrl: legacyUrl,
+    model: (cfg.model || '').trim(),
+    apiKey: (cfg.apiKey || '').trim()
+  };
+}
+
 async function runAnalysis() {
   ensureStyle();
   addFab();
@@ -205,26 +226,22 @@ async function runAnalysis() {
     return;
   }
   const prompt = buildPrompt(questions);
-  const cfg = await browser.storage.local.get({
-    baseUrl: 'http://localhost:11434',
-    model: '',
-    apiKey: ''
-  });
-  const model = (cfg.model || (cfg.baseUrl.includes('ollama.com') ? 'gpt-oss:120b' : 'qwen3:8b')).trim();
-  const baseUrl = (cfg.baseUrl || 'http://localhost:11434').replace(/\/+$/, '');
+  const cfg = await loadConfig();
+  const label = PROVIDER_LABELS[cfg.provider] || cfg.provider;
 
   try {
-    const resp = await browser.runtime.sendMessage({
+    const resp = await api.runtime.sendMessage({
       type: 'gfa-chat',
-      baseUrl,
-      apiKey: cfg.apiKey || '',
-      model,
+      provider: cfg.provider,
+      baseUrl: cfg.provider === 'ollama-local' ? cfg.customUrl : '',
+      apiKey: cfg.apiKey,
+      model: cfg.model,
       messages: [
         { role: 'user', content: prompt }
       ]
     });
     if (!resp || resp.error) {
-      setStatus('Erreur Ollama : ' + ((resp && resp.error) || 'réponse vide'));
+      setStatus('Erreur ' + label + ' : ' + ((resp && resp.error) || 'réponse vide'));
       return;
     }
     const answers = extractAnswerJson(resp.content);

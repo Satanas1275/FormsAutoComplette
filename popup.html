@@ -3,37 +3,52 @@
 <head>
   <meta charset="utf-8">
   <style>
-    body { font: 600 13px arial, sans-serif; color: #202124; width: 300px; padding: 12px; }
+    body { font: 600 13px arial, sans-serif; color: #202124; width: 320px; padding: 12px; }
     h1 { font-size: 15px; margin: 0 0 10px; }
     label { display: block; margin: 10px 0 4px; font-weight: 500; }
-    input { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #dadce0; border-radius: 6px; font-size: 13px; }
-    input:focus { outline: 2px solid #34a853; border-color: transparent; }
+    input, select { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #dadce0; border-radius: 6px; font-size: 13px; font-family: inherit; }
+    input:focus, select:focus { outline: 2px solid #34a853; border-color: transparent; }
     button { margin-top: 14px; width: 100%; background: #34a853; color: #fff; border: none; padding: 9px; border-radius: 8px; font-weight: 700; cursor: pointer; }
     button:hover { background: #2d9249; }
+    button.link { margin: 6px 0 0; width: auto; background: none; color: #1a73e8; padding: 0; font-weight: 600; font-size: 12px; }
+    button.link:hover { background: none; text-decoration: underline; }
     small { color: #5f6368; display: block; margin-top: 6px; }
-    select { width: 100%; padding: 5px; border-radius: 6px; border: 1px solid #dadce0; }
+    .row { display: flex; gap: 6px; }
+    .row input { flex: 1; }
+    .row button { flex: none; margin-top: 0; padding: 6px 10px; font-size: 12px; background: #f1f3f4; color: #202124; }
+    .row button:hover { background: #e8eaed; }
+    [hidden] { display: none !important; }
   </style>
 </head>
 <body>
   <h1>Google Forms IA</h1>
-  <label for="baseUrl">Serveur Ollama (URL racine)</label>
-  <input id="baseUrl" placeholder="http://localhost:11434 ou https://ollama.com">
-  <small>Pour le cloud Ollama, mets <b>https://ollama.com</b> + ta clé API.</small>
+
+  <label for="provider">Fournisseur</label>
+  <select id="provider">
+    <option value="ollama-cloud">Ollama Cloud</option>
+    <option value="claude">Claude (Anthropic)</option>
+    <option value="ollama-local">Ollama local (URL custom)</option>
+  </select>
+  <small id="endpoint">https://ollama.com</small>
+
+  <div id="urlBlock" hidden>
+    <label for="baseUrl">URL du serveur Ollama</label>
+    <input id="baseUrl" placeholder="http://localhost:11434">
+    <small>Serveur local ou proxy compatible Ollama.</small>
+  </div>
 
   <label for="model">Modèle</label>
-  <input id="model" placeholder="qwen3:8b / gpt-oss:120b" list="models">
-  <datalist id="models">
-    <option value="qwen3:8b"></option>
-    <option value="llama3.2:latest"></option>
-    <option value="gpt-oss:120b"></option>
-  </datalist>
+  <div class="row">
+    <input id="model" placeholder="qwen3:8b" list="models">
+    <button id="fetchModels" type="button" title="Lister les modèles du serveur">Lister</button>
+  </div>
+  <datalist id="models"></datalist>
 
-  <label for="apiKey">Clé API (laisser vide si local)</label>
+  <label for="apiKey" id="keyLabel">Clé API</label>
   <input id="apiKey" type="password" placeholder="ollama_xxxxxxxx">
 
-
   <button id="save">Enregistrer</button>
-  <small id="msg" style="color:#34a853;"></small>
+  <small id="msg"></small>
   <script src="popup.js"></script>
 </body>
 </html>

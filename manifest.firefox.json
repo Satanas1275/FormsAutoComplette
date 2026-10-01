@@ -3,7 +3,12 @@
   "name": "Google Forms AI Answers",
   "version": "1.1.0",
   "description": "Envoie les questions d'un Google Form à Ollama (cloud ou local) ou Claude et surligne en vert les réponses détectées.",
-  "minimum_chrome_version": "116",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "google-forms-ai@localhost",
+      "strict_min_version": "115.0"
+    }
+  },
   "permissions": ["storage", "activeTab"],
   "optional_host_permissions": ["http://*/*", "https://*/*"],
   "host_permissions": [
@@ -14,7 +19,7 @@
     "http://127.0.0.1/*"
   ],
   "background": {
-    "service_worker": "background.js"
+    "scripts": ["background.js"]
   },
   "content_scripts": [
     {
