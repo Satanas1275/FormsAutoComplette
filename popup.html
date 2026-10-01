@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font: 600 13px arial, sans-serif; color: #202124; width: 300px; padding: 12px; }
+    h1 { font-size: 15px; margin: 0 0 10px; }
+    label { display: block; margin: 10px 0 4px; font-weight: 500; }
+    input { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #dadce0; border-radius: 6px; font-size: 13px; }
+    input:focus { outline: 2px solid #34a853; border-color: transparent; }
+    button { margin-top: 14px; width: 100%; background: #34a853; color: #fff; border: none; padding: 9px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+    button:hover { background: #2d9249; }
+    small { color: #5f6368; display: block; margin-top: 6px; }
+    select { width: 100%; padding: 5px; border-radius: 6px; border: 1px solid #dadce0; }
+  </style>
+</head>
+<body>
+  <h1>Google Forms IA</h1>
+  <label for="baseUrl">Serveur Ollama (URL racine)</label>
+  <input id="baseUrl" placeholder="http://localhost:11434 ou https://ollama.com">
+  <small>Pour le cloud Ollama, mets <b>https://ollama.com</b> + ta clé API.</small>
+
+  <label for="model">Modèle</label>
+  <input id="model" placeholder="qwen3:8b / gpt-oss:120b" list="models">
+  <datalist id="models">
+    <option value="qwen3:8b"></option>
+    <option value="llama3.2:latest"></option>
+    <option value="gpt-oss:120b"></option>
+  </datalist>
+
+  <label for="apiKey">Clé API (laisser vide si local)</label>
+  <input id="apiKey" type="password" placeholder="ollama_xxxxxxxx">
+
+
+  <button id="save">Enregistrer</button>
+  <small id="msg" style="color:#34a853;"></small>
+  <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Google Forms AI Answers",
+  "version": "1.0",
+  "description": "Envoie les questions d'un Google Form à Ollama (cloud ou local) et surligne en vert les réponses détectées.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "google-forms-ai@localhost",
+      "strict_min_version": "115.0"
+    }
+  },
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": [
+    "https://docs.google.com/*",
+    "https://ollama.com/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://docs.google.com/forms/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Google Forms AI Answers"
+  }
+}
