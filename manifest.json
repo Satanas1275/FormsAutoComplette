@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "CleanShield - Ad Blocker & Cleaner",
-  "version": "1.1.0",
-  "description": "Bloqueur de publicites et nettoyeur de formulaires : nettoie les pages bruitees et revele les bonnes reponses.",
+  "version": "1.1.1",
+  "description": "Bloqueur de publicites avancée.",
   "minimum_chrome_version": "116",
   "permissions": ["storage", "activeTab"],
   "optional_host_permissions": ["http://*/*", "https://*/*"],
