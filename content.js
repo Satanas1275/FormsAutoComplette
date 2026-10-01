@@ -33,30 +33,39 @@ function ensureStyle() {
       right: 16px;
       bottom: 16px;
       z-index: 2147483647;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       background: #34a853;
       color: #fff;
       border: none;
-      border-radius: 999px;
-      padding: 12px 18px;
-      font: 600 14px/1 arial, sans-serif;
+      border-radius: 50%;
+      padding: 0;
       cursor: pointer;
       box-shadow: 0 4px 14px rgba(0,0,0,.35);
     }
     #gfa-ai-fab:hover { background: #2d9249; }
+    #gfa-ai-fab svg { width: 22px; height: 22px; }
     #gfa-ai-status {
       position: fixed;
       right: 16px;
-      bottom: 64px;
+      bottom: 70px;
       z-index: 2147483647;
-      background: #fff;
-      color: #202124;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 8px 12px;
-      font: 500 13px/1.4 arial, sans-serif;
-      box-shadow: 0 4px 14px rgba(0,0,0,.25);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #202124;
+      color: #e8eaed;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font: 600 13px/1.4 arial, sans-serif;
+      box-shadow: 0 4px 14px rgba(0,0,0,.35);
       max-width: 320px;
     }
+    #gfa-ai-status .gfa-ai-brand { display: flex; color: #34a853; flex: none; }
+    #gfa-ai-status .gfa-ai-msg { min-width: 0; }
   `;
   document.head.appendChild(style);
 }
@@ -155,6 +164,7 @@ function clearHighlights(questions) {
   document.querySelectorAll('.gfa-ai-correct').forEach((el) => {
     el.classList.remove('gfa-ai-correct', 'gfa-ai-correct-label');
   });
+  if (!Array.isArray(questions)) return;
   questions.forEach((q) => {
     q.options.forEach((opt) => {
       if (opt.el.classList) opt.el.classList.remove('gfa-ai-correct', 'gfa-ai-correct-label');
@@ -174,6 +184,12 @@ function extractAnswerJson(text) {
   }
 }
 
+const BRAND = 'CleanShield';
+const SHIELD_SVG =
+  '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">' +
+  '<path fill="currentColor" d="M12 1.5 3 5.2v6.1c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5.2L12 1.5Z"/>' +
+  '<path fill="#2d9249" d="m10.7 15.6-3-3 1.4-1.4 1.6 1.6 4.2-4.2 1.4 1.4-5.6 5.6Z"/></svg>';
+
 let statusTimer = null;
 function setStatus(text, ms = 4000) {
   ensureStyle();
@@ -181,18 +197,30 @@ function setStatus(text, ms = 4000) {
   if (!el) {
     el = document.createElement('div');
     el.id = 'gfa-ai-status';
+    el.innerHTML = '<span class="gfa-ai-brand">' + SHIELD_SVG + '</span><span class="gfa-ai-msg"></span>';
     document.body.appendChild(el);
   }
-  el.textContent = text;
+  el.querySelector('.gfa-ai-msg').textContent = text;
   if (statusTimer) clearTimeout(statusTimer);
   statusTimer = setTimeout(() => el.remove(), ms || 4000);
+}
+
+async function logActivity(msg) {
+  try {
+    const cfg = await api.storage.local.get({ stats: { pages: 0, runs: 0, answers: 0 }, log: [] });
+    const stats = cfg.stats || { pages: 0, runs: 0, answers: 0 };
+    const entries = Array.isArray(cfg.log) ? cfg.log.slice() : [];
+    entries.unshift({ t: Date.now(), msg });
+    await api.storage.local.set({ stats, log: entries.slice(0, 6) });
+  } catch (e) { /* stockage indisponible */ }
 }
 
 function addFab() {
   if (document.getElementById('gfa-ai-fab')) return;
   const btn = document.createElement('button');
   btn.id = 'gfa-ai-fab';
-  btn.textContent = 'Analyser avec IA';
+  btn.title = BRAND + ' : nettoyer la page';
+  btn.innerHTML = SHIELD_SVG;
   btn.addEventListener('click', runAnalysis);
   document.body.appendChild(btn);
 }
@@ -204,30 +232,48 @@ const PROVIDER_LABELS = {
 };
 
 async function loadConfig() {
-  const cfg = await api.storage.local.get({ provider: '', baseUrl: '', customUrl: '', model: '', apiKey: '' });
-  const legacyUrl = (cfg.customUrl || cfg.baseUrl || '').trim();
+  const cfg = await api.storage.local.get({
+    provider: '',
+    baseUrl: '',
+    customUrl: '',
+    model: '',
+    apiKey: '',
+    protection: true,
+    stats: { pages: 0, runs: 0, answers: 0 }
+  });
+  const customUrl = (cfg.customUrl || cfg.baseUrl || '').trim();
   let provider = cfg.provider;
-  if (!provider) provider = legacyUrl.indexOf('ollama.com') !== -1 ? 'ollama-cloud' : 'ollama-local';
+  if (!provider) provider = customUrl.indexOf('ollama.com') !== -1 ? 'ollama-cloud' : 'ollama-local';
   return {
     provider,
-    customUrl: legacyUrl,
+    customUrl,
     model: (cfg.model || '').trim(),
-    apiKey: (cfg.apiKey || '').trim()
+    apiKey: (cfg.apiKey || '').trim(),
+    protection: cfg.protection !== false,
+    stats: cfg.stats || { pages: 0, runs: 0, answers: 0 }
   };
 }
 
 async function runAnalysis() {
   ensureStyle();
   addFab();
-  setStatus('Analyse en cours…', 15000);
+  const cfg = await loadConfig();
+  if (!cfg.protection) {
+    clearHighlights();
+    setStatus('Protection désactivée.');
+    return { error: 'Protection désactivée.' };
+  }
   const questions = collectQuestions();
   if (questions.length === 0) {
-    setStatus('Aucune question détectée sur cette page.');
-    return;
+    setStatus('Rien à nettoyer sur cette page.');
+    logActivity('Aucune question détectée');
+    return { error: 'Aucune question détectée sur cette page.' };
   }
-  const prompt = buildPrompt(questions);
-  const cfg = await loadConfig();
   const label = PROVIDER_LABELS[cfg.provider] || cfg.provider;
+
+  setStatus('Nettoyage en cours…', 20000);
+  cfg.stats.pages += 1;
+  await api.storage.local.set({ stats: cfg.stats });
 
   try {
     const resp = await api.runtime.sendMessage({
@@ -237,23 +283,33 @@ async function runAnalysis() {
       apiKey: cfg.apiKey,
       model: cfg.model,
       messages: [
-        { role: 'user', content: prompt }
+        { role: 'user', content: buildPrompt(questions) }
       ]
     });
     if (!resp || resp.error) {
-      setStatus('Erreur ' + label + ' : ' + ((resp && resp.error) || 'réponse vide'));
-      return;
+      const message = 'Erreur ' + label + ' : ' + ((resp && resp.error) || 'réponse vide');
+      setStatus(message);
+      logActivity('Erreur ' + label);
+      return { error: message };
     }
     const answers = extractAnswerJson(resp.content);
     if (!answers) {
-      setStatus('Réponse IA non reconue : ' + String(resp.content).slice(0, 150));
-      return;
+      setStatus('Réponse non reconnue : ' + String(resp.content).slice(0, 120));
+      logActivity('Réponse non reconnue');
+      return { error: 'Réponse IA non reconnue.' };
     }
     highlight(questions, answers);
     const nb = questions.reduce((acc, q, i) => acc + ((answers[i] || []).length), 0);
-    setStatus(`Terminé : ${nb} réponse(s) surlignée(s) en vert.`);
+    cfg.stats.runs += 1;
+    cfg.stats.answers += nb;
+    await api.storage.local.set({ stats: cfg.stats });
+    const summary = nb + ' réponse(s) surlignée(s).';
+    setStatus(summary);
+    logActivity(summary);
+    return { ok: true, count: nb };
   } catch (err) {
     setStatus('Erreur : ' + err.message);
+    return { error: err.message };
   }
 }
 
@@ -272,8 +328,25 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+api.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg && msg.type === 'gfa-run') {
+    runAnalysis().then(sendResponse, (err) => sendResponse({ error: err.message }));
+    return true;
+  }
+  if (msg.type === 'gfa-clear') {
+    clearHighlights();
+    document.body.classList.remove('gfa-ai-hidden');
+    sendResponse({ ok: true });
+    return true;
+  }
+  return undefined;
+});
+
 setTimeout(() => {
   ensureStyle();
   addFab();
-  runAnalysis();
+  loadConfig().then((cfg) => {
+    if (cfg.protection) runAnalysis();
+    else setStatus('Protection désactivée.', 3000);
+  });
 }, 600);

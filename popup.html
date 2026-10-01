@@ -3,52 +3,127 @@
 <head>
   <meta charset="utf-8">
   <style>
-    body { font: 600 13px arial, sans-serif; color: #202124; width: 320px; padding: 12px; }
-    h1 { font-size: 15px; margin: 0 0 10px; }
-    label { display: block; margin: 10px 0 4px; font-weight: 500; }
-    input, select { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #dadce0; border-radius: 6px; font-size: 13px; font-family: inherit; }
-    input:focus, select:focus { outline: 2px solid #34a853; border-color: transparent; }
-    button { margin-top: 14px; width: 100%; background: #34a853; color: #fff; border: none; padding: 9px; border-radius: 8px; font-weight: 700; cursor: pointer; }
-    button:hover { background: #2d9249; }
-    button.link { margin: 6px 0 0; width: auto; background: none; color: #1a73e8; padding: 0; font-weight: 600; font-size: 12px; }
-    button.link:hover { background: none; text-decoration: underline; }
-    small { color: #5f6368; display: block; margin-top: 6px; }
-    .row { display: flex; gap: 6px; }
-    .row input { flex: 1; }
-    .row button { flex: none; margin-top: 0; padding: 6px 10px; font-size: 12px; background: #f1f3f4; color: #202124; }
-    .row button:hover { background: #e8eaed; }
+    :root { --green: #34a853; --green-dark: #2d9249; --ink: #202124; --muted: #5f6368; }
+    * { box-sizing: border-box; }
+    body { font: 500 13px/1.4 arial, sans-serif; color: var(--ink); width: 320px; margin: 0; background: #fff; }
+    h1 { font-size: 15px; margin: 0; letter-spacing: .2px; }
+    .muted { color: var(--muted); }
+    button { font-family: inherit; cursor: pointer; }
+
+    header { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid #eceff1; }
+    .logo { width: 30px; height: 34px; color: var(--green); flex: none; }
+    .brand { flex: 1; min-width: 0; }
+    .brand small { display: block; color: var(--muted); font-weight: 500; font-size: 11px; }
+
+    .switch { position: relative; display: inline-block; width: 46px; height: 26px; flex: none; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .track { position: absolute; inset: 0; background: #c8ccd1; border-radius: 999px; transition: .18s; }
+    .track::before { content: ""; position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: .18s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+    .switch input:checked + .track { background: var(--green); }
+    .switch input:checked + .track::before { transform: translateX(20px); }
+    .switch input:focus-visible + .track { outline: 2px solid var(--green); outline-offset: 2px; }
+
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: #c8ccd1; display: inline-block; margin-right: 6px; }
+    .dot.on { background: var(--green); box-shadow: 0 0 0 3px rgba(52,168,83,.18); }
+    section { padding: 12px 14px; }
+    .row { display: flex; align-items: center; justify-content: space-between; }
+    .stats { display: flex; gap: 8px; margin: 12px 0 4px; }
+    .stat { flex: 1; background: #f6f8f7; border: 1px solid #e6eae8; border-radius: 10px; padding: 8px 6px; text-align: center; }
+    .stat b { display: block; font-size: 17px; }
+    .stat small { color: var(--muted); font-weight: 500; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; }
+
+    ul.log { list-style: none; margin: 12px 0 0; padding: 0; }
+    ul.log li { display: flex; gap: 8px; padding: 5px 0; border-top: 1px solid #f1f3f2; }
+    ul.log li span { color: var(--muted); font-size: 11px; flex: none; }
+    ul.log li em { font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .empty { color: var(--muted); padding-top: 6px; }
+
+    .primary { width: 100%; margin-top: 12px; background: var(--green); color: #fff; border: none; padding: 9px; border-radius: 8px; font-weight: 700; }
+    .primary:hover { background: var(--green-dark); }
+    .ghost { background: none; border: 1px solid #dadce0; color: var(--ink); padding: 8px 12px; border-radius: 8px; font-weight: 600; }
+    .ghost:hover { background: #f6f8f7; }
+
+    label.f { display: block; margin: 10px 0 4px; font-weight: 600; }
+    input, select { width: 100%; padding: 6px 8px; border: 1px solid #dadce0; border-radius: 6px; font: inherit; }
+    input:focus, select:focus { outline: 2px solid var(--green); border-color: transparent; }
+    .field { display: flex; gap: 6px; }
+    .field button { flex: none; background: #f1f3f4; border: 1px solid #dadce0; border-radius: 6px; padding: 0 10px; font-weight: 600; }
+    .field button:hover { background: #e8eaed; }
+    small.hint { display: block; color: var(--muted); margin-top: 5px; }
+    #msg { min-height: 15px; margin-top: 8px; }
+    kbd { background: #f1f3f4; border: 1px solid #dadce0; border-radius: 4px; padding: 1px 5px; font: inherit; font-size: 11px; }
     [hidden] { display: none !important; }
   </style>
 </head>
 <body>
-  <h1>Google Forms IA</h1>
+  <header>
+    <svg class="logo" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M12 1.5 3 5.2v6.1c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5.2L12 1.5Z"/>
+      <path fill="#fff" d="m10.7 15.6-3-3 1.4-1.4 1.6 1.6 4.2-4.2 1.4 1.4-5.6 5.6Z"/>
+    </svg>
+    <div class="brand">
+      <h1>CleanShield</h1>
+      <small>Ad blocker &amp; nettoyeur <span id="version"></span></small>
+    </div>
+    <label class="switch">
+      <input type="checkbox" id="protection" aria-label="Protection">
+      <span class="track"></span>
+    </label>
+  </header>
 
-  <label for="provider">Fournisseur</label>
-  <select id="provider">
-    <option value="ollama-cloud">Ollama Cloud</option>
-    <option value="claude">Claude (Anthropic)</option>
-    <option value="ollama-local">Ollama local (URL custom)</option>
-  </select>
-  <small id="endpoint">https://ollama.com</small>
+  <section id="main">
+    <div class="row">
+      <div><span class="dot" id="dot"></span><b id="state">Protection</b></div>
+      <span class="muted" id="count">0 / 0</span>
+    </div>
 
-  <div id="urlBlock" hidden>
-    <label for="baseUrl">URL du serveur Ollama</label>
-    <input id="baseUrl" placeholder="http://localhost:11434">
-    <small>Serveur local ou proxy compatible Ollama.</small>
-  </div>
+    <div class="stats">
+      <div class="stat"><b id="statPages">0</b><small>Pages</small></div>
+      <div class="stat"><b id="statRuns">0</b><small>Analyses</small></div>
+      <div class="stat"><b id="statAnswers">0</b><small>Réponses</small></div>
+    </div>
 
-  <label for="model">Modèle</label>
-  <div class="row">
-    <input id="model" placeholder="qwen3:8b" list="models">
-    <button id="fetchModels" type="button" title="Lister les modèles du serveur">Lister</button>
-  </div>
-  <datalist id="models"></datalist>
+    <ul class="log" id="log"></ul>
+    <p class="empty" id="emptyLog" hidden>Aucune activité pour le moment.</p>
 
-  <label for="apiKey" id="keyLabel">Clé API</label>
-  <input id="apiKey" type="password" placeholder="ollama_xxxxxxxx">
+    <button class="primary" id="scan">Nettoyer cette page</button>
+  </section>
 
-  <button id="save">Enregistrer</button>
-  <small id="msg"></small>
+  <section id="advanced" hidden>
+    <div class="row" style="margin-bottom:6px">
+      <b>Configuration IA</b>
+      <button class="ghost" id="close">Fermer</button>
+    </div>
+
+    <label class="f" for="provider">Fournisseur</label>
+    <select id="provider">
+      <option value="ollama-cloud">Ollama Cloud</option>
+      <option value="claude">Claude (Anthropic)</option>
+      <option value="ollama-local">Ollama local (URL custom)</option>
+    </select>
+    <small class="hint" id="endpoint">Endpoint : https://ollama.com</small>
+
+    <div id="urlBlock" hidden>
+      <label class="f" for="baseUrl">URL du serveur Ollama</label>
+      <input id="baseUrl" placeholder="http://localhost:11434">
+      <small class="hint">Serveur local ou proxy compatible Ollama.</small>
+    </div>
+
+    <label class="f" for="model">Modèle</label>
+    <div class="field">
+      <input id="model" placeholder="qwen3:8b" list="models">
+      <button id="fetchModels" type="button" title="Lister les modèles du serveur">Lister</button>
+    </div>
+    <datalist id="models"></datalist>
+
+    <label class="f" for="apiKey" id="keyLabel">Clé API</label>
+    <input id="apiKey" type="password" placeholder="ollama_xxxxxxxx">
+
+    <button class="primary" id="save">Enregistrer</button>
+    <small id="msg"></small>
+    <small class="hint" style="text-align:center"><kbd>H</kbd> pour masquer</small>
+  </section>
+
   <script src="popup.js"></script>
 </body>
 </html>
